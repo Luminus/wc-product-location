@@ -55,12 +55,16 @@ class WC_Product_Location {
 		$args = array(
 			'id'          => '_product_location',
 			'label'       => __( 'Product Location', 'wc-product-location' ),
-			'class'       => 'wc-product-location',
+			'class'       => 'select short',
 			'desc_tip'    => true,
 			'description' => __( 'Select the Location where this product is available', 'wc-product-location' ),
+			'options'     => array(
+				'Orlando'   => __( 'Orlando', 'wc-product-location' ),
+				'Louisiana' => __( 'Louisiana', 'wc-product-location' ),
+			),
 		);
 
-		woocommerce_wp_text_input( $args );
+		woocommerce_wp_select( $args );
 	}
 
 	/*
