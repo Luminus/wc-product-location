@@ -44,6 +44,8 @@ class WC_Product_Location {
 
 			// Save the data in the Product Location field when you publish or update the product
 			add_action( 'woocommerce_process_product_meta', array( $this, 'save_product_location' ) );
+
+			add_action( 'woocommerce_product_query', array( $this, 'filter_products_by_location' ) );
 		}
 
 	}
@@ -59,8 +61,8 @@ class WC_Product_Location {
 			'desc_tip'    => true,
 			'description' => __( 'Select the Location where this product is available', 'wc-product-location' ),
 			'options'     => array(
-				'Orlando'   => __( 'Orlando', 'wc-product-location' ),
-				'Louisiana' => __( 'Louisiana', 'wc-product-location' ),
+				'FL' => __( 'Florida', 'wc-product-location' ),
+				'LA' => __( 'Louisiana', 'wc-product-location' ),
 			),
 		);
 
@@ -73,6 +75,20 @@ class WC_Product_Location {
 	function save_product_location( $post_id ) {
 		$product_location = isset( $_POST['_product_location'] ) ? $_POST['_product_location'] : '';
 		update_post_meta( $post_id, '_product_location', esc_attr( $product_location ) );
+	}
+
+	/*
+	 * Filter Products by Location
+	 */
+	function filter_products_by_location( $q ) {
+		$meta_query   = $q->get( 'meta_query' );
+		$meta_query[] = array(
+			'key'     => '_product_location',
+			'value'   => 'FL',
+			'compare' => '=',
+		);
+
+		$q->set( 'meta_query', $meta_query );
 	}
 
 	/*
