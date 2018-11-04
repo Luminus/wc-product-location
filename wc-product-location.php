@@ -46,6 +46,8 @@ class WC_Product_Location {
 			add_action( 'woocommerce_process_product_meta', array( $this, 'save_product_location' ) );
 
 			add_action( 'woocommerce_product_query', array( $this, 'filter_products_by_location' ) );
+
+			add_action( 'woocommerce_before_shop_loop', array( $this, 'add_product_location_search' ), 11, 2 );
 		}
 
 	}
@@ -60,10 +62,12 @@ class WC_Product_Location {
 			'class'       => 'select short',
 			'desc_tip'    => true,
 			'description' => __( 'Select the Location where this product is available', 'wc-product-location' ),
-			'options'     => array(
-				'FL' => __( 'Florida', 'wc-product-location' ),
-				'LA' => __( 'Louisiana', 'wc-product-location' ),
-			),
+			// 'options'     => array(
+			// 	'FL' => __( 'Florida', 'wc-product-location' ),
+			// 	'LA' => __( 'Louisiana', 'wc-product-location' ),
+			// ),
+			// 'options'    => WC()->countries->get_countries(),
+			'options'    => WC()->countries->get_states( 'US' ),
 		);
 
 		woocommerce_wp_select( $args );
@@ -79,22 +83,54 @@ class WC_Product_Location {
 
 	/*
 	 * Filter Products by Location
+	 *
+	 * TO DO:
+	 * - Add a second parameter to the method for location so that it can be passed to the 'value' meta in the query
+	 * - Figure out how to do the search and retrieve this parameter
 	 */
-	function filter_products_by_location( $q ) {
-		$meta_query   = $q->get( 'meta_query' );
-		$meta_query[] = array(
-			'key'     => '_product_location',
-			'value'   => 'FL',
-			'compare' => '=',
-		);
+	public function filter_products_by_location( $q ) {
+		$location = isset( $_GET['product-location'] ) ? $_GET['product-location'] : '';
 
-		$q->set( 'meta_query', $meta_query );
+		if ( $location !== '' ) {
+			$meta_query   = $q->get( 'meta_query' );
+			$meta_query[] = array(
+				'key'     => '_product_location',
+				'value'   => $location,
+				'compare' => '=',
+			);
+
+			$q->set( 'meta_query', $meta_query );
+		}
 	}
+
+	public function add_product_location_search() {
+		$states = WC()->countries->get_states( 'US' );
+		?>
+		<form class="woocommerce-ordering-location" method="get">
+			<select name="product-location" class="product-location">
+				<?php foreach ( $states as $id => $name ) : ?>
+					<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $_GET['product-location'], $id ); ?>><?php echo esc_html( $name ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<input type="hidden" name="paged" value="1" />
+			<!-- <input type="submit"> -->
+			<?php wc_query_string_form_fields( null, array( 'orderby', 'submit', 'paged', 'product-page', 'product-location' ) ); ?>
+		</form>
+
+		<script>
+			jQuery( function( $ ) {
+				// Orderby
+				$( '.woocommerce-ordering-location' ).on( 'change', 'select.product-location', function() {
+					$( this ).closest( 'form' ).submit();
+				});
+			});
+		</script>
+<?php }
 
 	/*
 	 * Display a notice to show that WooCommerce is required for the plugin to function
 	 */
-	function show_woocommerce_required_notice() {
+	public function show_woocommerce_required_notice() {
 		$message = sprintf(
 			/* translators: 1: URL of WooCommerce plugin */
 			__( 'The WooCommerce Product Location feature plugin requires <a href="%1$s">WooCommerce</a> to be installed and active.', 'wc-product-location' ),
